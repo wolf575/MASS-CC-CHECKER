@@ -913,7 +913,7 @@ if (!$validation['valid']) {
         'card'    => $format,
         'score'   => 0,
         'message' => $errorMsg,
-        'msg'     => "<div><b style='color:#ef4444;'>Die</b> | {$format} | {$errorMsg}</div>",
+        'msg'     => "<div class=\"result-item\" data-card-data=\"{$format}\"><b style='color:#ef4444;'>Die</b> | {$format} | {$errorMsg}</div>",
     ]);
     exit;
 }
@@ -950,6 +950,6 @@ echo json_encode([
     'card'    => $format,
     'score'   => $result['score'],
     'message' => $result['reason'],
-    'msg'     => "<div><b style='color:{$color};'>{$label}</b> <span style='opacity:0.7;font-size:11px;'>({$cardTypeName})</span> | {$format} | {$result['reason']}</div>",
+    'msg'     => "<div class=\"result-item\" data-card-data=\"{$format}\"><b style='color:{$color};'>{$label}</b> <span style='opacity:0.7;font-size:11px;'>({$cardTypeName})</span> | {$format} | {$result['reason']}</div>",
 ], JSON_UNESCAPED_SLASHES);
 ?>

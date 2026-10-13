@@ -107,8 +107,16 @@
       <!-- Live Results -->
       <div class="box-title">
         <h3 class="panel-title alert alert-primary">
-          <span>Live</span>
-          <span class="badge bg-success live" id="live-count">0</span>
+          <span class="panel-title-left">
+            <span>Live</span>
+            <span class="badge bg-success live" id="live-count">0</span>
+          </span>
+          <button type="button" class="copy-icon" id="copy-live" title="Copy all Live cards" aria-label="Copy all Live cards" style="color:#10b981;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
         </h3>
       </div>
       <div class="box-body">
@@ -120,8 +128,16 @@
       <!-- Dead Results -->
       <div class="box-title">
         <h3 class="panel-title alert alert-primary">
-          <span>Die</span>
-          <span class="badge bg-danger die" id="die-count">0</span>
+          <span class="panel-title-left">
+            <span>Die</span>
+            <span class="badge bg-danger die" id="die-count">0</span>
+          </span>
+          <button type="button" class="copy-icon" id="copy-die" title="Copy all Die cards" aria-label="Copy all Die cards" style="color:#ef4444;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
         </h3>
       </div>
       <div class="box-body">
@@ -133,8 +149,16 @@
       <!-- Unknown Results -->
       <div class="box-title">
         <h3 class="panel-title alert alert-primary">
-          <span>Unknown</span>
-          <span class="badge bg-warning unknown" id="unknown-count">0</span>
+          <span class="panel-title-left">
+            <span>Unknown</span>
+            <span class="badge bg-warning unknown" id="unknown-count">0</span>
+          </span>
+          <button type="button" class="copy-icon" id="copy-unknown" title="Copy all Unknown cards" aria-label="Copy all Unknown cards" style="color:#d97706;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
         </h3>
       </div>
       <div class="box-body">
@@ -173,7 +197,10 @@
         progressBar: $('#progress-bar'),
         statsSummary: $('#stats-summary'),
         statTotal: $('#stat-total'),
-        statProcessed: $('#stat-processed')
+        statProcessed: $('#stat-processed'),
+        copyLive: $('#copy-live'),
+        copyDie: $('#copy-die'),
+        copyUnknown: $('#copy-unknown')
       };
 
       // ============================================
@@ -586,9 +613,89 @@
           ? `<span class="card-type-badge">${cardType.name}</span>` 
           : '';
         
-        return `<div>
+        const safeData = String(data).replace(/"/g, '&quot;');
+        return `<div class="result-item" data-card-data="${safeData}">
           <b style="color:${color};">${status}</b>${cardBadge} | ${data}${message ? ` | ${message}` : ''}
         </div>`;
+      }
+
+      /**
+       * Extracts the raw card data (number|MM|YYYY|CVV) from a result item.
+       * Prefers the data-card-data attribute, then falls back to parsing text.
+       * @param {Element} element - Result item element
+       * @returns {string|null} - Card data string, or null if not found
+       */
+      function extractCardData(element) {
+        if (element.dataset && element.dataset.cardData) {
+          return element.dataset.cardData;
+        }
+
+        const match = (element.textContent || '').match(
+          /\d{12,19}\|(?:0[1-9]|1[0-2])\|(?:\d{4}|\d{2})\|\d{3,4}/
+        );
+        return match ? match[0] : null;
+      }
+
+      /**
+       * Copies all card data from one result panel to the clipboard.
+       * @param {string} panelId - Panel element id
+       * @param {jQuery} $iconElement - Copy icon for visual feedback
+       * @param {string} typeName - Human-readable panel name
+       */
+      async function copyPanelData(panelId, $iconElement, typeName) {
+        const cards = [...document.querySelectorAll(`#${panelId} .result-item`)]
+          .map(extractCardData)
+          .filter(card => card !== null && card !== '');
+
+        const uniqueCards = [...new Set(cards)];
+
+        if (uniqueCards.length === 0) {
+          showInfo(`No ${typeName} cards to copy`, 'info');
+          return;
+        }
+
+        const text = uniqueCards.join('\n');
+        const copied = await copyTextToClipboard(text);
+
+        if (copied) {
+          showInfo(`${uniqueCards.length} ${typeName} card${uniqueCards.length !== 1 ? 's' : ''} copied`, 'success');
+          $iconElement.addClass('copied');
+          setTimeout(() => $iconElement.removeClass('copied'), 600);
+        } else {
+          showInfo('Copy failed', 'error');
+        }
+      }
+
+      /**
+       * Copies text using the async Clipboard API with a legacy fallback.
+       * @param {string} text - Text to copy
+       * @returns {Promise<boolean>} - Whether the copy succeeded
+       */
+      async function copyTextToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (error) {
+            console.error('Clipboard API failed:', error);
+          }
+        }
+
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.top = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          return successful;
+        } catch (error) {
+          console.error('Legacy copy failed:', error);
+          return false;
+        }
       }
 
       // ============================================
@@ -717,6 +824,11 @@
         elements.statTotal.text('0');
         elements.statProcessed.text('0');
       }
+
+      // One-click copy for each result category
+      elements.copyLive.on('click', () => copyPanelData('success-panel', elements.copyLive, 'Live'));
+      elements.copyDie.on('click', () => copyPanelData('danger-panel', elements.copyDie, 'Die'));
+      elements.copyUnknown.on('click', () => copyPanelData('warning-panel', elements.copyUnknown, 'Unknown'));
 
       // ============================================
       // Event Handlers
