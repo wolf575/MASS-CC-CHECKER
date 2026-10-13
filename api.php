@@ -12,6 +12,7 @@ if (file_exists('config.php')) {
     define('MIN_CARD_LENGTH', 13);
     define('MAX_CARD_LENGTH', 19);
     define('MIN_VALID_YEAR', (int) date('Y'));
+    define('MAX_VALID_YEARS_AHEAD', 100);
 }
 
 header('Content-Type: application/json; charset=utf-8');
@@ -265,6 +266,9 @@ function validateExpiry(string $month, string $year): array
     $currentYear  = (int) date('Y');
     $currentMonth = (int) date('n');
     $minYear      = defined('MIN_VALID_YEAR') ? MIN_VALID_YEAR : $currentYear;
+    $maxAhead     = defined('MAX_VALID_YEARS_AHEAD')
+        ? (int) MAX_VALID_YEARS_AHEAD
+        : 10;
 
     if ($monthNum < 1 || $monthNum > 12) {
         return ['valid' => false, 'message' => 'Invalid month (01-12)'];
@@ -278,7 +282,7 @@ function validateExpiry(string $month, string $year): array
         return ['valid' => false, 'message' => 'Card expired'];
     }
 
-    if ($yearNum > $currentYear + 10) {
+    if ($yearNum > $currentYear + $maxAhead) {
         return ['valid' => false, 'message' => 'Expiry year too far in future'];
     }
 

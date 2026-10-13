@@ -1,3 +1,11 @@
+<?php
+if (file_exists('config.php')) {
+    require_once 'config.php';
+}
+if (!defined('MAX_VALID_YEARS_AHEAD')) {
+    define('MAX_VALID_YEARS_AHEAD', 100);
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -462,7 +470,7 @@
         }
 
         // Cards typically valid for 3-5 years, flag suspicious if too far
-        if (yearNum > currentYear + 10) {
+        if (yearNum > currentYear + <?php echo (int) MAX_VALID_YEARS_AHEAD; ?>) {
           return { valid: false, message: 'Expiry year too far in future' };
         }
 
