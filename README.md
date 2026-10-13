@@ -71,6 +71,20 @@ Edit `config.php` to customize validation settings:
 
 Note: You can use any hosting that supports PHP.
 
+## 🐳 Docker
+
+The project is also published as a public Docker image:
+
+```text
+ghcr.io/wolf575/mass-cc-checker:latest
+```
+
+```bash
+docker run -d --name mass-cc-checker -p 8080:80 ghcr.io/wolf575/mass-cc-checker:latest
+```
+
+For `docker compose`, source builds, and configuration options, see [DOCKER.md](DOCKER.md).
+
 ## 🚸 Warnings :
 
 - This is Just For Educational Purpose.
